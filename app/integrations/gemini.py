@@ -1,6 +1,6 @@
-from google import genai
+from groq import Groq
 from app.core import config
 
-def get_gemini_model():
-    client = genai.Client(api_key=config.GOOGLE_API_KEY)
+def get_groq_client():
+    client = Groq(api_key=config.GROQ_API_KEY)
     return client

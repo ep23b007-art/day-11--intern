@@ -1,65 +1,75 @@
 import re
-from google import genai
-from google.genai import types
+import json
+from groq import Groq
+from app.core import config
 from app.agent import tools as agent_tools
-from app.integrations.gemini import get_gemini_model
 from prompts.system_prompt import build_system_prompt
 
 
-TOOL_DECLARATIONS = types.Tool(
-    function_declarations=[
-        types.FunctionDeclaration(
-            name="search_destinations",
-            description="Search the database for travel destinations.",
-            parameters=types.Schema(
-                type="OBJECT",
-                properties={
-                    "query": types.Schema(type="STRING"),
-                    "budget_max": types.Schema(type="NUMBER"),
+TOOL_DECLARATIONS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_destinations",
+            "description": "Search the database for travel destinations.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "budget_max": {"type": "number"},
                 },
-                required=["query"],
-            ),
-        ),
-        types.FunctionDeclaration(
-            name="get_itinerary_template",
-            description="Get a day-by-day itinerary template for a destination.",
-            parameters=types.Schema(
-                type="OBJECT",
-                properties={
-                    "destination_id": types.Schema(type="STRING"),
-                    "duration_days": types.Schema(type="INTEGER"),
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_itinerary_template",
+            "description": "Get a day-by-day itinerary template for a destination.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destination_id": {"type": "string"},
+                    "duration_days": {"type": "integer"},
                 },
-                required=["destination_id", "duration_days"],
-            ),
-        ),
-        types.FunctionDeclaration(
-            name="check_availability",
-            description="Check hotel/flight availability.",
-            parameters=types.Schema(
-                type="OBJECT",
-                properties={
-                    "destination_id": types.Schema(type="STRING"),
-                    "check_in": types.Schema(type="STRING"),
-                    "check_out": types.Schema(type="STRING"),
-                    "num_travelers": types.Schema(type="INTEGER"),
+                "required": ["destination_id", "duration_days"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "check_availability",
+            "description": "Check hotel/flight availability.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destination_id": {"type": "string"},
+                    "check_in": {"type": "string"},
+                    "check_out": {"type": "string"},
+                    "num_travelers": {"type": "integer"},
                 },
-                required=["destination_id", "check_in", "check_out"],
-            ),
-        ),
-        types.FunctionDeclaration(
-            name="save_itinerary",
-            description="Save the finalised itinerary to the database.",
-            parameters=types.Schema(
-                type="OBJECT",
-                properties={
-                    "session_id": types.Schema(type="STRING"),
-                    "itinerary": types.Schema(type="OBJECT"),
+                "required": ["destination_id", "check_in", "check_out"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "save_itinerary",
+            "description": "Save the finalised itinerary to the database.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "session_id": {"type": "string"},
+                    "itinerary": {"type": "object"},
                 },
-                required=["session_id", "itinerary"],
-            ),
-        ),
-    ]
-)
+                "required": ["session_id", "itinerary"],
+            },
+        },
+    },
+]
 
 
 TOOL_REGISTRY = {
@@ -90,18 +100,10 @@ def _extract_slots(history: list[dict]) -> dict:
     return slots
 
 
-def _to_gemini_history(history: list[dict]) -> list:
-    gemini_msgs = []
-    for msg in history:
-        role = "model" if msg["role"] == "assistant" else "user"
-        gemini_msgs.append({"role": role, "parts": [{"text": msg["content"]}]})
-    return gemini_msgs
-
-
 class AgentOrchestrator:
     def __init__(self):
-        self.client = get_gemini_model()
-        self.model_name = "gemini-2.0-flash"
+        self.client = Groq(api_key=config.GROQ_API_KEY)
+        self.model_name = "llama-3.1-8b-instant"
 
     async def handle_message(
         self,
@@ -113,36 +115,48 @@ class AgentOrchestrator:
         full_history = history + [{"role": "user", "content": user_message}]
         slots = _extract_slots(full_history)
         system_prompt = build_system_prompt(slots)
-        gemini_history = _to_gemini_history(history)
 
-        current_message = system_prompt + "\n\nUser: " + user_message
+        messages = [{"role": "system", "content": system_prompt + "\n\nIMPORTANT: When calling functions, you MUST use proper JSON format for arguments. Do not add any extra characters or text around the JSON."}]
+        for msg in history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+        messages.append({"role": "user", "content": user_message})
+
         tool_calls = []
         final_text = ""
 
-        messages = gemini_history + [{"role": "user", "parts": [{"text": current_message}]}]
-
         for iteration in range(5):
-            response = self.client.models.generate_content(
+            response = self.client.chat.completions.create(
                 model=self.model_name,
-                contents=messages,
-                config=types.GenerateContentConfig(tools=[TOOL_DECLARATIONS])
+                messages=messages,
+                tools=TOOL_DECLARATIONS,
+                tool_choice="auto"
             )
 
-            candidate = response.candidates[0]
-            parts = candidate.content.parts
+            message = response.choices[0].message
 
-            function_calls = [p for p in parts if hasattr(p, "function_call") and p.function_call]
-
-            if not function_calls:
-                final_text = "\n".join(
-                    p.text for p in parts if hasattr(p, "text") and p.text
-                )
+            if not message.tool_calls:
+                final_text = message.content or ""
                 break
 
-            function_responses = []
-            for fc in function_calls:
-                name = fc.function_call.name
-                args = dict(fc.function_call.args)
+            messages.append({
+                "role": "assistant",
+                "content": message.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments
+                        }
+                    }
+                    for tc in message.tool_calls
+                ]
+            })
+
+            for tc in message.tool_calls:
+                name = tc.function.name
+                args = json.loads(tc.function.arguments)
 
                 fn = TOOL_REGISTRY.get(name)
                 try:
@@ -151,21 +165,15 @@ class AgentOrchestrator:
                     result = {"error": str(e)}
 
                 tool_calls.append({"name": name, "args": args, "result": result})
-                function_responses.append({
-                    "role": "tool",
-                    "parts": [{"function_response": {"name": name, "response": result}}]
-                })
 
-            messages = messages + function_responses
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps(result)
+                })
 
         else:
             final_text = "I'm still working through the details — could you try again?"
-
-        # DB persist commented out until app.db is ready
-        # async with get_db_session() as db:
-        #     await crud.append_message(db, session_id=session_id, role="user", content=user_message)
-        #     await crud.append_message(db, session_id=session_id, role="assistant", content=final_text, tool_calls=tool_calls)
-        #     await db.commit()
 
         return {
             "reply": final_text,
