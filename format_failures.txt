@@ -1,0 +1,142 @@
+QUERY: Plan a campervan trip from Chennai to Goa
+MISSING: Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+To plan a campervan trip from Chennai to Goa, we need to consider the destinations and activities available along the route. Based on the information available, we have:
+
+* Chennai as the starting point
+* Goa as the destination
+* A campervan for travel
+* Check-in on 2024-01-01 and check-out on 2024-01-15 for Goa
+* Check-in on 2024-01-01 and check-out on 2024-01-06 for Chennai
+* A 14-day itinerary for Goa
+
+To book the campervan, I couldn't search for a campervan because there was a lack of required parameters to search for campervans. However, based on the search of campervan route from Chennai to Goa - there might be campervan operators available.
+
+Please provide the campervan company and budget_max to continue with the planning.
+============================================================
+
+QUERY: 2 day quick weekend trip from Bangalore, anywhere nearby
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+I'm still working through the details — could you try again?
+============================================================
+
+QUERY: Plan a 10 day campervan loop from Delhi through Manali and Leh
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+/function=search_destinations>{"query": "Manali", "budget_max": 1000}</function>
+/function=search_destinations>{"query": "Leh", "budget_max": 1000}</function>
+/function=search_destinations>{"query": "campervan", "budget_max": 1000}</function>
+/function=get_itinerary_template>{"destination_id": "destination_1", "duration_days": 10}</function>
+/function=search_destinations>{"budget_max": 1000, "query": "campervan Delhi loop 10 days"}</function>
+/function=get_itinerary_template>{"destination_id": "destination_2", "duration_days": 10}</function>
+/function=check_availability>{"check_in": "2024-06-01", "check_out": "2024-06-10", "destination_id": null, "num_travelers": 4}</function> 
+
+Missing info:
+- Actual destination names for Manali and Leh
+- Destination ID for each destination searched
+- Availability for the campervan 
+- Actual budget
+============================================================
+
+QUERY: Family trip with 2 kids from Mumbai to Goa, 5 days
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+(crashed: Error code: 400 - {'error': {'message': 'tool call validation failed: parameters for tool search_destinations did not match schema: errors: [`/budget_max`: expected number, but got null]', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '<function=search_destinations>{"query":"Family trip with 2 kids from Mumbai to Goa","budget_max":null}</function>'}})
+============================================================
+
+QUERY: Trip for my elderly parents from Chennai, something relaxed
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+It seems like the search results are showing international destinations. Let me try searching for domestic options.
+
+ <function=search_destinations>{"budget_max":5000,"query":"beach destinations in Tamil Nadu for elderly"}</function>
+============================================================
+
+QUERY: Cheapest possible campervan trip from Hyderabad, budget 30000
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+I'm still working through the details — could you try again?
+============================================================
+
+QUERY: We are 4 foodies from Pune, plan a trip around great local food
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+I'm still working through the details — could you try again?
+============================================================
+
+QUERY: Honeymoon campervan trip from Bangalore to Coorg
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+(crashed: Error code: 400 - {'error': {'message': "tool call validation failed: attempted to call tool 'brave_search' which was not in request.tools", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': 'It appears the search results are not showing the expected destinations for the "campervan trip from Bangalore to Coorg" and "honeymoon campervan trip". \n\nThis might be due to limited information or wrong keywords. Let\'s try searching again.\nLet me try to find the right results for you.\n \n<function=brave_search>{"query": "campervan trip from Bangalore to Coorg"} </function>\n'}})
+============================================================
+
+QUERY: Solo trip from Delhi to Rishikesh next month
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+It seems there's not enough information related to Rishikesh, let's try something else. 
+
+To proceed, we will need a few more details. Can you please provide your preferred accommodation type (Budget, Mid-range, Luxury)?
+============================================================
+
+QUERY: campervan chennai to pondicherry 3 days 2 people
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+(crashed: Error code: 400 - {'error': {'message': 'tool call validation failed: parameters for tool search_destinations did not match schema: errors: [`/budget_max`: expected number, but got null]', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '<function=search_destinations>{"query": "campervan trips from Chennai to Pondicherry", "budget_max": null}</function>\n'}})
+============================================================
+
+QUERY: Bhai, ek mast trip plan karo Mumbai se Goa, 6 log hain
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+/function=search_destinations>{"query": "Goa","budget_max": 10000,"num_travelers": 6}</function>
+
+(function=check_availability>{"check_in": "10/08/2024","check_out": "15/08/2024","destination_id": "<result_id>","num_travelers": 6}</function>
+
+Please provide the result id from the above function call.
+============================================================
+
+QUERY: I want a pet friendly campervan trip from Bangalore, 4 days
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+(crashed: Error code: 400 - {'error': {'message': 'tool call validation failed: parameters for tool search_destinations did not match schema: errors: [`/budget_max`: expected number, but got null]', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '<function=search_destinations>{"query": "pet friendly campervan trip from Bangalore", "budget_max": null}</function>'}})
+============================================================
+
+QUERY: Plan a monsoon trip from Kochi through Munnar
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+It seems these tools cannot find destinations in our database for a "monsoon trip Kochi to Munnar".
+
+
+I will use external knowledge to suggest a plan:
+
+Plan for a monsoon trip from Kochi to Munnar
+
+1. Day 1: Reach Kochi and stay overnight in a hotel
+
+2. Day 2: Check out of the hotel in Kochi and drive to Munnar (4-5 hours)
+
+3. Day 3: Explore Mattupetty, Rose Garden, and other places in Munnar. Stay overnight in a hotel in Munnar
+
+4. Day 4: Visit the Echo Point, Kundala Lake, and other places around Munnar. Pack up for return journey
+
+5. Day 5: Drive back to Kochi (4-5 hours) and spend the day at leisure. Stay overnight in a hotel
+
+6. Day 6: Check out of the hotel and depart from Kochi
+
+This plan will give you a good balance of city life and hill station experience in Munnar, and can be adjusted based on your preference.
+============================================================
+
+QUERY: Trip from Jaipur to Udaipur for 3 senior citizens, 4 days
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+Note: Since the function "check_availability" requires a hotel/flight ID to check availability, we should know the ID of the hotel/flight to Udaipur. So, I have kept the destination ID as "" in the first call to check_availability. After getting the list of destinations, we can proceed further.
+============================================================
+
+QUERY: Plan me the best possible campervan holiday, surprise me
+MISSING: Route, Day-by-Day, Food, Parking, Safety, Emergency, Recommendation
+REPLY:
+To plan the best possible campervan holiday, I'll need some information. 
+
+Can you please provide your budget for the holiday (max budget per person per day)?
+============================================================
+

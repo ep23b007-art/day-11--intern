@@ -16,7 +16,13 @@ TOOL_DECLARATIONS = [
                 "type": "object",
                 "properties": {
                     "query": {"type": "string"},
-                    "budget_max": {"type": "number"},
+                    "budget_max": {
+                        "type": "number",
+                        "description": (
+                            "Optional. Omit this field entirely if the user "
+                            "gave no budget. Never send null."
+                        ),
+                    },
                 },
                 "required": ["query"],
             },
@@ -79,12 +85,28 @@ TOOL_REGISTRY = {
     "save_itinerary": agent_tools.save_itinerary,
 }
 
+# Model text must never contain raw function-call syntax. This regex
+# removes any leaked lines like:  /function=search_destinations>{...}
+# or  <function=...>{...}</function>
+_FUNCTION_LEAK = re.compile(r"^\s*<?/?function=.*$", re.MULTILINE)
+
+
+def _clean_reply(text: str) -> str:
+    """Strip leaked tool-call syntax from a model reply."""
+    return _FUNCTION_LEAK.sub("", text or "").strip()
+
 
 def _extract_slots(history: list[dict]) -> dict:
     slots = {}
     text = " ".join(m["content"] for m in history if m["role"] == "user").lower()
 
-    for city in ["bali", "tokyo", "paris", "london"]:
+    cities = [
+        "bali", "tokyo", "paris", "london",
+        "chennai", "goa", "bangalore", "bengaluru", "mumbai", "delhi",
+        "hyderabad", "pune", "manali", "leh", "coorg", "rishikesh",
+        "pondicherry", "kochi", "munnar", "jaipur", "udaipur", "srisailam",
+    ]
+    for city in cities:
         if city in text:
             slots["destination"] = city.title()
             break
@@ -93,9 +115,13 @@ def _extract_slots(history: list[dict]) -> dict:
     if m:
         slots["duration_days"] = int(m.group(1))
 
-    m = re.search(r"\$\s*([\d,]+)", text)
+    m = re.search(r"(?:\$|₹|rs\.?\s*|budget\s*)([\d,]+)", text)
     if m:
         slots["budget"] = int(m.group(1).replace(",", ""))
+
+    m = re.search(r"(\d+)\s*(?:people|persons?|travellers?|travelers?|log|pax|kids?|adults?)", text)
+    if m:
+        slots["num_travelers"] = int(m.group(1))
 
     return slots
 
@@ -103,7 +129,17 @@ def _extract_slots(history: list[dict]) -> dict:
 class AgentOrchestrator:
     def __init__(self):
         self.client = Groq(api_key=config.GROQ_API_KEY)
-        self.model_name = "llama-3.1-8b-instant"
+        # was "llama-3.1-8b-instant" — the 8B model kept leaking function
+        # syntax into replies. 70B follows tool + format rules far better.
+        self.model_name = "llama-3.3-70b-versatile"
+
+    def _create(self, messages, use_tools=True):
+        """One Groq call. use_tools=False forces a plain-text answer."""
+        kwargs = {"model": self.model_name, "messages": messages}
+        if use_tools:
+            kwargs["tools"] = TOOL_DECLARATIONS
+            kwargs["tool_choice"] = "auto"
+        return self.client.chat.completions.create(**kwargs)
 
     async def handle_message(
         self,
@@ -116,7 +152,7 @@ class AgentOrchestrator:
         slots = _extract_slots(full_history)
         system_prompt = build_system_prompt(slots)
 
-        messages = [{"role": "system", "content": system_prompt + "\n\nIMPORTANT: When calling functions, you MUST use proper JSON format for arguments. Do not add any extra characters or text around the JSON."}]
+        messages = [{"role": "system", "content": system_prompt}]
         for msg in history:
             messages.append({"role": msg["role"], "content": msg["content"]})
         messages.append({"role": "user", "content": user_message})
@@ -125,12 +161,13 @@ class AgentOrchestrator:
         final_text = ""
 
         for iteration in range(5):
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-                tools=TOOL_DECLARATIONS,
-                tool_choice="auto"
-            )
+            # A bad generated tool call can make Groq itself return 400
+            # ("tool call validation failed"). Instead of crashing the
+            # whole request, fall back to a forced plain-text answer.
+            try:
+                response = self._create(messages, use_tools=True)
+            except Exception:
+                response = self._create(messages, use_tools=False)
 
             message = response.choices[0].message
 
@@ -156,7 +193,13 @@ class AgentOrchestrator:
 
             for tc in message.tool_calls:
                 name = tc.function.name
-                args = json.loads(tc.function.arguments)
+                try:
+                    args = json.loads(tc.function.arguments)
+                except json.JSONDecodeError:
+                    args = {}
+                # drop null params (e.g. budget_max: null) so our own
+                # tool functions never receive None values
+                args = {k: v for k, v in args.items() if v is not None}
 
                 fn = TOOL_REGISTRY.get(name)
                 try:
@@ -173,7 +216,26 @@ class AgentOrchestrator:
                 })
 
         else:
-            final_text = "I'm still working through the details — could you try again?"
+            # loop hit 5 iterations while still calling tools: instead of
+            # giving up with a canned apology, force one final answer
+            # from everything gathered so far, with tools switched OFF.
+            messages.append({
+                "role": "user",
+                "content": (
+                    "Please write your final answer now using the "
+                    "information gathered so far, following the required "
+                    "7-section itinerary format."
+                ),
+            })
+            try:
+                response = self._create(messages, use_tools=False)
+                final_text = response.choices[0].message.content or ""
+            except Exception:
+                final_text = ""
+
+        final_text = _clean_reply(final_text)
+        if not final_text:
+            final_text = "Sorry, I hit a snag putting that together. Could you rephrase your request?"
 
         return {
             "reply": final_text,
