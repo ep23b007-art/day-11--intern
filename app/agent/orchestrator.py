@@ -4,6 +4,7 @@ from groq import Groq
 from app.core import config
 from app.agent import tools as agent_tools
 from prompts.system_prompt import build_system_prompt
+from app.agent.memory import get_window
 
 
 TOOL_DECLARATIONS = [
@@ -153,7 +154,7 @@ class AgentOrchestrator:
         system_prompt = build_system_prompt(slots)
 
         messages = [{"role": "system", "content": system_prompt}]
-        for msg in history:
+        for msg in get_window(session_id, history):
             messages.append({"role": msg["role"], "content": msg["content"]})
         messages.append({"role": "user", "content": user_message})
 
