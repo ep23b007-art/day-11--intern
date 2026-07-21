@@ -25,3 +25,6 @@
 
 ## Walkthrough
 - N testers on staging, no new blockers filed.
+
+## Walkthrough
+- [N] testers on staging, no new blockers filed.
