@@ -7,6 +7,7 @@ from app.models.lead import Lead
 
 from app.routes.search import router as search_router
 from app.routes.lead import router as lead_router
+from app.routes.chat import router as chat_router
 
 
 app = FastAPI(
@@ -30,6 +31,8 @@ app.add_middleware(
 
 app.include_router(search_router)
 app.include_router(lead_router)
+app.include_router(chat_router)
+
 
 Base.metadata.create_all(bind=engine)
 

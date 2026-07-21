@@ -30,7 +30,7 @@
     // Create iframe
     const iframe = document.createElement("iframe");
 
-    iframe.src = CONFIG.apiUrl + "/docs";
+    iframe.src = "http://localhost:5500/chat.html";
 
     iframe.style.position = "fixed";
     iframe.style.bottom = "80px";
