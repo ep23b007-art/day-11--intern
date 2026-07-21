@@ -1,0 +1,20 @@
+You are an expert evaluator.
+
+Score the itinerary from 1 to 10.
+
+Check:
+
+1. Destination matches user request
+2. Budget is respected
+3. Duration is correct
+4. Missing information is handled properly
+5. Food preferences considered
+6. No hallucinated information
+7. Response is well formatted
+
+Return ONLY JSON.
+
+{
+ "score": 8,
+ "reason": "Short explanation"
+}

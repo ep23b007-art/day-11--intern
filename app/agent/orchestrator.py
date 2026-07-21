@@ -32,6 +32,28 @@ TOOL_DECLARATIONS = [
     {
         "type": "function",
         "function": {
+            "name": "estimate_trip_cost",
+            "description": "Calculate the total trip cost.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destination": {
+                        "type": "string"
+                    },
+                    "days": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "destination",
+                    "days"
+                ]
+            }
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_itinerary_template",
             "description": "Get a day-by-day itinerary template for a destination.",
             "parameters": {
@@ -81,6 +103,7 @@ TOOL_DECLARATIONS = [
 
 TOOL_REGISTRY = {
     "search_destinations": agent_tools.search_destinations,
+    "estimate_trip_cost": agent_tools.estimate_trip_cost,
     "get_itinerary_template": agent_tools.get_itinerary_template,
     "check_availability": agent_tools.check_availability,
     "save_itinerary": agent_tools.save_itinerary,
@@ -235,8 +258,31 @@ class AgentOrchestrator:
                 final_text = ""
 
         final_text = _clean_reply(final_text)
+        
         if not final_text:
-            final_text = "Sorry, I hit a snag putting that together. Could you rephrase your request?"
+            final_text = (
+                "Sorry, I hit a snag putting that together. "
+                "Could you rephrase your request?"
+            ) 
+
+        #Ask for name and phone only after itinerary generation
+        if slots.get("destination") and slots.get("duration_days"):
+            final_text += """
+--------------------------------------------------
+
+📞 Interested in this trip?
+
+If you'd like our TravelKeet team to contact you regarding this itinerary, please reply with:
+
+• Name:
+• Indian Phone Number:
+
+Example:
+Name: Neha
+Phone: 9876543210
+
+We'll use these details only to help you with your booking and trip planning.
+"""
 
         return {
             "reply": final_text,

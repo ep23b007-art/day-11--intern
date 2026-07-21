@@ -1,0 +1,62 @@
+[
+    {
+        "id": 1,
+        "query": "Plan a 3-day Goa trip for 2 adults under ₹20,000."
+    },
+    {
+        "id": 2,
+        "query": "Plan a 10-day Europe trip for a couple."
+    },
+    {
+        "id": 3,
+        "query": "Suggest a family vacation to Kerala with kids."
+    },
+    {
+        "id": 4,
+        "query": "Plan a relaxing trip for elderly parents."
+    },
+    {
+        "id": 5,
+        "query": "Plan a honeymoon in Bali."
+    },
+    {
+        "id": 6,
+        "query": "Suggest a solo backpacking trip."
+    },
+    {
+        "id": 7,
+        "query": "Plan an adventure trip to Himachal."
+    },
+    {
+        "id": 8,
+        "query": "Vegetarian food preferred in Japan."
+    },
+    {
+        "id": 9,
+        "query": "Plan a luxury Dubai vacation."
+    },
+    {
+        "id": 10,
+        "query": "Budget trip to Ooty under ₹10000."
+    },
+    {
+        "id": 11,
+        "query": "Plan a religious trip to Varanasi."
+    },
+    {
+        "id": 12,
+        "query": "Trip to an unknown city named XYZ."
+    },
+    {
+        "id": 13,
+        "query": "Plan a trip without mentioning budget."
+    },
+    {
+        "id": 14,
+        "query": "I want to travel next month."
+    },
+    {
+        "id": 15,
+        "query": "5-day family vacation with vegetarian food and low budget."
+    }
+]
